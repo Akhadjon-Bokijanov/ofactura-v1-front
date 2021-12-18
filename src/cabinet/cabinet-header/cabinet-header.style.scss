@@ -1,13 +1,32 @@
 .cabinet-header-main-con{
     background-color: #fff;
     .ch-sub-container{
-        padding: 20px;
+        padding: 14px 32px;
         display: flex;
         align-items: center;
         justify-content: space-between;
 
         .ch-user-info-con-1{
-
+            .username{
+                font-style: normal;
+                font-weight: bold;
+                font-size: 14px;
+                line-height: 18px;
+                display: flex;
+                align-items: center;
+                text-transform: uppercase;
+                color: #303030;
+            }
+            .tin{
+                font-style: normal;
+                font-weight: normal;
+                font-size: 14px;
+                line-height: 18px;
+                display: flex;
+                align-items: center;
+                text-transform: uppercase;
+                color: #303030;
+            }
         }
         .ch-user-info-con-2{
 
@@ -16,15 +35,62 @@
             .ch-action-container{
                 display: flex;
                 margin-left: 45px;
-
                 .wallet-img{
-                    padding: 8px;
+                    padding: 11px;
+                    //margin: 5px 10px;
                     border-radius: 7px;
-                    margin: 5px;
                     background-color: rgba(24, 144, 255, 0.1);
-
+                    margin-top: 0!important;
+                    margin-bottom: 0!important;
+                }
+                .balance{
+                    font-style: normal;
+                    font-weight: normal;
+                    font-size: 14px;
+                    line-height: 16px;
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    color: #303030;
+                }
+                .balance_value{
+                    font-family: Roboto;
+                    font-style: normal;
+                    font-weight: bold;
+                    font-size: 18px;
+                    line-height: 21px;
+                    display: flex;
+                    align-items: center;
+                    color: #2B63C0;
                 }
             }
         }
     }
+}
+.resizer{
+    display: block!important;
+}
+
+.ant-layout-header{
+    padding:0;
+    line-height: 20px;
+}
+.ant-dropdown-menu-submenu-title{
+    padding: 12px 18px;
+}
+
+.font-size-changer .font-size-changer-buttons > div{
+    line-height: normal;
+    height: 22px;
+
+    .font-size-changer-buttons{
+        height: auto !important;
+        min-width: 40px;
+        min-height: 20px;
+    }
+}
+
+.font-size-changer{
+    display: flex !important;
+    align-items: center;
 }

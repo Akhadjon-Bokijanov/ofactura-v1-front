@@ -8,15 +8,25 @@ import { Link } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import AdminCard from '../../components/admin-card/admin-card.component';
 import DynaGrid from '../../components/dyna-grid/dyna-grid.component';
-import { selectCabinetData } from '../../redux/user/user.selector';
+import {selectCabinetData, selectCurrentUser} from '../../redux/user/user.selector';
 import './home.component.scss';
 import {useTranslation} from "react-i18next";
+import clock_icon from "../../images/clock-icon.svg";
+import pending from "../../images/pending.svg";
+import signed_icon from "../../images/signed-icon.svg";
+import cancelled_icon from "../../images/cancelled-icon.svg";
+import HomeTabCard from '../../components/home-tab-card/HomeTabCard';
+import HomeNewsCard from '../../components/home-news-card/HomeNewsCard';
+import FirebaseSmsAuth from '../../components/firebase-sms-auth/FirebaseSmsAuth';
+import {get_home_config} from "../../utils/home.config.provider";
 
-const CabinetHome = ({ cabinetData }) => {
+const CabinetHome = ({ cabinetData,user }) => {
+    const [newUrl,setNewUrl] = useState('');
+    let { title, createTitle, createUrl, gridSourceUrl, gridConfig } = get_home_config();
 
     const {t} = useTranslation()
 
-    const [activeTab, setActiveTab] = useState(0)
+    const [activeTab, setActiveTab] = useState(0);
     const { income, outcome, rejected, saved } = cabinetData ?? {};
     const TabList= {
         0: t("Kiruvchi hujjatlar"),
@@ -27,39 +37,43 @@ const CabinetHome = ({ cabinetData }) => {
 
     const list_of_docs = [
         {
-            title: t("Kiruvchi"),
+            title: t("Imzo kutilmoqda"),
             count: income,
-            icon: "cloud-download-alt",
-            color: "purple",
+            img: clock_icon,
+            color: "blue",
             footer: "Faktura yaratish",
-            create_url: "/cabinet/documents/waiting"
+            link: "/cabinet/documents/waiting"
         },
         {
             title: t("Chiquvchi"),
             count: outcome,
-            icon: "cloud-upload-alt",
-            color: "green",
+            img: pending,
+            color: "orange",
             footer: "Shartnoma yaratish",
-            create_url: "/cabinet/documents/signed"
+            link: "/cabinet/documents/signed"
         },
         {
             title: t("Rad etilgan"),
             count: rejected,
-            icon: "ban",
-            color: "pink",
+            img: signed_icon,
+            color: "green",
             footer: "Akt yaratish",
-            create_url: "/cabinet/documents/rejected"
+            link: "/cabinet/documents/rejected"
         },
         {
             title: t("Saqlangan"),
             count: saved,
-            icon: ["far", "bookmark"],
-            color: "orange",
+            img: cancelled_icon,
+            color: "pink",
             footer: "Ishonchnoma yaratish",
-            create_url: "/cabinet/documents/saved"
+            link: "/cabinet/documents/saved"
         },
     
     ]
+
+    const configHandler = () =>{
+
+    }
 
     const dyna_config = {
         dataSourcePath: `/api/v1/cabinet/${activeTab}?hi`,
@@ -73,6 +87,20 @@ const CabinetHome = ({ cabinetData }) => {
             view: true
         },
         allColumns: [
+            {
+                title: t("Holati"),
+                dataIndex: "status",
+                //isFilterable: true,
+                width: 70,
+                // filters: [
+                //     {value: 1, text: "1-Saqlangan"}, 
+                //     {value: 2, text: "2-Imzo kutilmoqda"}, 
+                //     {value: 3, text: "3-Jo'natilgan"}, 
+                //     {value: 4, text: "4-Xatolik yuzbergan"},
+                //     {value: 5, text: "5-Qaytarib yuborilgan"}, 
+                //     {value: 6, text: "6-Qabul qilingan"}, 
+                //     {value: 7, text: "7-Muaffaqiyatli"}]
+            },
             {
                 title: t("Hujjat №"),
                 dataIndex: 'docNo',
@@ -101,31 +129,6 @@ const CabinetHome = ({ cabinetData }) => {
                 isSearchable: true,
             },
             {
-                title: "Oluvchi",
-                dataIndex: 'buyerName',
-                isSearchable: true,
-                width: 150
-            },
-            {
-                title: "Oluvchi STIR",
-                dataIndex: "buyerTin",
-                isSearchable: true,
-            },
-            {
-                title: t("Holati"),
-                dataIndex: "status",
-                isFilterable: true,
-                width: 70,
-                filters: [
-                    {value: 1, text: "1-Saqlangan"}, 
-                    {value: 2, text: "2-Imzo kutilmoqda"}, 
-                    {value: 3, text: "3-Jo'natilgan"}, 
-                    {value: 4, text: "4-Xatolik yuzbergan"},
-                    {value: 5, text: "5-Qaytarib yuborilgan"}, 
-                    {value: 6, text: "6-Qabul qilingan"}, 
-                    {value: 7, text: "7-Muaffaqiyatli"}]
-            },
-            {
                 title: t('Yaratilgan sana'),
                 dataIndex: "created_at",
                 dataType: 'date',
@@ -136,17 +139,59 @@ const CabinetHome = ({ cabinetData }) => {
     return (
         <div className="cabinet-home-main-container">
             <div className="cabinet-home-sub-container">
+
+                {/* <FirebaseSmsAuth /> */}
+
+                <div style={{fontSize: 32, fontWeight: 700, marginBottom: 8}}>{t("Bosh sahifa")}</div>
                 <Row gutter={[16, 16]}>
                     {
-                        list_of_docs.map((data, index)=><Col onClick={()=>setActiveTab(index)} md={6}>
-                            <AdminCard data={data} />
+                        list_of_docs.map((data, index)=><Col onClick={()=>setActiveTab(index)} md={6} >
+                            <HomeTabCard data={data} />
                         </Col>)
                     }
                     
                 </Row>
+
+                <HomeNewsCard />
+                    home
                 <DynaGrid
+                    tableAttachedTabs={[
+                        {
+                            title: t("Bacha hujjatlar"),
+                            color: "",
+                            url: "all/index"
+                        },
+                        {
+                            title: t("Faktura"),
+                            color: "#FE346E",
+                            url: "facturas/index"
+                        },
+                        {
+                            title: t("Shartnoma"),
+                            color: "#0FBE7B",
+                            url: "contract/index"
+                        },
+                        {
+                            title: t("Ishonchnoma"),
+                            color: "#FF0000",
+                            url: "emp/index"
+                        },
+                        {
+                            title: t("TTY"),
+                            color: "yellow",
+                            url: "tty/index"
+                        },
+                        {
+                            title: t("Akt"),
+                            color: "purple",
+                            url:'act/index'
+                        }
+                    ]}
+                    hideFilter
                     title={TabList[activeTab]}
-                    config={dyna_config}
+                    // config={dyna_config}
+                    config={{...gridConfig, dataSourcePath: `${newUrl}?tin=${user.tin}`}}
+                    setNewUrl={setNewUrl}
                 />
             </div>
         </div>
@@ -155,7 +200,8 @@ const CabinetHome = ({ cabinetData }) => {
 
 
 const mapStateToProps = createStructuredSelector({
-    cabinetData: selectCabinetData
+    cabinetData: selectCabinetData,
+    user: selectCurrentUser
 })
 
 export default connect(mapStateToProps)(CabinetHome)

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import 'antd/dist/antd.css';
-import { Table, Tooltip, Input, Button, Space, Popconfirm, message, Form, Row, Col, DatePicker, Select } from 'antd';
+import { Table, Tooltip, Input, Button, Space, Popconfirm, message, Form, Row, Col, DatePicker, Select, Badge } from 'antd';
 import Highlighter from 'react-highlight-words';
 import { Link, withRouter } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -24,13 +24,24 @@ import RichTextParser from '../rich-text-parser/rich-text-parser.component';
 import { useEffect } from 'react';
 import { selectCurrentUser } from '../../redux/user/user.selector';
 import { useTranslation } from 'react-i18next';
+import {DateFormat} from "../../utils/DateFormat";
+import eye_icon from "../../images/eye.svg";
+import PaginationRenderer from './PaginationRenderer';
+import SignBtn from '../Btns/SignBtn';
+import CancelBtn from "../Btns/CancelBtn";
+import {bringdata} from "../../sevices/bringdata";
 
 const { Option } = Select;
 
 
 
 const DynaGrid = ({
-  
+    user,
+                    setNewUrl,
+  showCancelDoc, 
+  showSignDoc,
+  tableAttachedTabs,      //Attached tabs to the table       
+  hideFilter,             //to hide filters of griid
   reload,
   loading,                //loading state of table
   currentUser,            //Provided by the comonent
@@ -45,6 +56,7 @@ const DynaGrid = ({
     primaryKeyName,
     primaryKeyValue,
     dataSourcePath,       //data source path for the table should be pagination
+    newDataSourcePath,       //data source path for the table should be pagination
     addElementViewPath,     //add element to the core
     deleteRequestPath,    //delete request path for API server 
     replaceInViewPath,
@@ -93,6 +105,8 @@ const DynaGrid = ({
   const [reRenderer, setRerenderer]=useState(reload??1);
   const [selectedRowKeys, setSelectedRowKeys] = useState();
   const [filterQuery, setFilterQuery]=useState("");
+  const [dataurl,setDataurl]=useState('');
+  const [st,setSt]=useState(0);
 
   let searchInput = null;
   const { t } = useTranslation(); 
@@ -100,12 +114,15 @@ const DynaGrid = ({
 
   const loadDataAjax = (url)=>{
     axios({
-      url: url,///url.replace(/[ ]+/g, ""),
+      url:url,
+      // url: `${dataurl}?tin=${user.tin}&page=1&limit=10`  ,///url.replace(/[ ]+/g, ""),
       method: "GET"
     }).then(res => {
 
       if (Array.isArray(res.data.data)) {
         setAjaxDataSource(res.data.data);
+        setSt(res.data.data.status);
+        console.log("data",res.data.data)
         setTotalDataCount(res.data.pages?.total)
       } else {
         console.log(res);
@@ -116,12 +133,13 @@ const DynaGrid = ({
       setLoadingResource(false)
     })
   }
-  useEffect(()=>{
 
+  
+  useEffect(()=> {
     let url = `${dataSourcePath}&page=${pagination.current}&limit=${pagination.pageSize}${searchText ? `&${modelName}[${searchedColumn}]=${searchText}` : ''}${filterQuery}`
-
-    setLoadingResource(true)
-    loadDataAjax(url)
+    console.log("newurl",newDataSourcePath)
+    setLoadingResource(true);
+    loadDataAjax(url);
     
   }, [pagination, dataSourcePath, searchText, searchedColumn, reRenderer, modelName, filterQuery])
   //#endregion PAGINATION PART
@@ -237,7 +255,7 @@ const DynaGrid = ({
   };
 
   const handleChange = (pagination, filters, sorter) => {
-    console.log('Various parameters', pagination, filters, sorter);
+    //console.log('Various parameters', pagination, filters, sorter);
     setPagination(pagination)
     setFilteredInfo(filters);
     //setSortedInfo(sorter);
@@ -377,9 +395,7 @@ const DynaGrid = ({
           {actions.edit 
           ? <Tooltip placement="left" title="O'zgartirish">
               {console.log("primaryKeyValue",primaryKeyValue)}
-              <Link 
-              
-                to={`${editActionPath}/${record[primaryKeyValue]}`}>
+              <Link to={`${editActionPath}/${record[primaryKeyValue]}`}>
                   <EditOutlined style={{color: 'blue'}}/>
               </Link>
             </Tooltip>
@@ -395,7 +411,7 @@ const DynaGrid = ({
                 okText="Ha"
                 cancelText="Yo'q"
               >
-              <DeleteOutlined style={{color: 'red'}} />
+              <DeleteOutlined style={{color: '#FE346E'}} />
             </Popconfirm>
           </Tooltip>
           : null
@@ -405,7 +421,7 @@ const DynaGrid = ({
           ? <Tooltip placement="bottom" title="Ko'rish" >
                 <Link to={`${ replaceInViewPath 
                   ? viewActionPath.replace(`{${replaceInViewPath}}`, record[replaceInViewPath]) 
-                  : viewActionPath}/${record[primaryKeyValue??'id']}`}><EyeOutlined /></Link>
+                  : viewActionPath}/${record[primaryKeyValue??'id']}/${record['status']}`} ><EyeOutlined /></Link>
               </Tooltip>
           : null  
           }
@@ -424,7 +440,6 @@ const DynaGrid = ({
     })
 
   const onSelectChange = selectedRowKeys => {
-    console.log('selectedRowKeys changed: ', selectedRowKeys);
     setSelectedRowKeys(selectedRowKeys)
   };
 
@@ -441,59 +456,103 @@ const DynaGrid = ({
   
     setFilterQuery(query);
   }
+    const [date,setDate] = useState({begin_date:'',end_date:''});
 
+    const handlePicker=(e,id)=>{
+      const DATE={...date};
+      DATE[id]=DateFormat(e?._d);
+      setDate(DATE);
+    }
+
+  function disabledDateStarted(current) {
+      let max = new Date(date.end_date);
+      max.setDate(max.getDate()+1)
+      return current && current > moment(max, "YYYY-MM-DD");
+  }
+  function disabledDateEnded(current) {
+      let min = (date.begin_date);
+      return current && current < moment(min, "YYYY-MM-DD");
+  }
+
+  const [activTabIndex, setActiveTabIndex] = useState(0);
+  const handleAttachedTabClick = async (index,url)=>{
+    setActiveTabIndex(index);
+    await setNewUrl(url);
+    await setDataurl(url);
+    console.log('url',url);
+  }
     return (
     <div className={`dyna-grid-main-container ${isFulliew ? 'akhadjon-dyna-grid-full-view' : null}`} >
 
         <div className="dyna-grid-doc-filter-area">
+          {
+            hideFilter ? null
+            :
           <div className="sub-filter-area">
-            <h3 style={{ marginBottom: 15 }}>{t("Filter")}</h3>
+            <div style={{display: 'flex', alignItems: 'center', marginBottom: 15, justifyContent: 'space-between'}}>
+                <div style={{display: 'flex', alignItems: 'center'}}>
+                    <div style={{ fontSize: 22, fontWeight: 700, marginRight: 24 }}>{t("Filter")}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <img src={eye_icon} alt="eye icon" style={{ width: 20, height: 14, marginRight: 10 }} />
+                      <span style={{ color: "#2B63C0", fontSize: 14, cursor: 'pointer' }}>
+                        {t("Filterni yashirish")}
+                      </span>
+                    </div>
+                </div>
+                  <div>
+                    <span style={{ fontSize: 14, color: '#2B63C0', cursor: 'pointer'}}>{t("Сбросить фильтр") }</span>
+                  </div>
+            </div>
+            
             <Form
+              labelCol={{span: 24}}
               onFinish={handleFilter}
               name="doc-filter"
             >
-              <Row justify="space-between">
+              <Row justify="space-between" align="bottom" gutter={[12, 0]}>
                
                 <Col span={4}>
-                  <Form.Item>
+                  {/* <Form.Item> */}
                     <Form.Item
                       key="dyna-form-facutura-no-old-1"
+                          label={t("Hujjat raqami")}
                       name="AllDocumentsSearch[doc_no]">
                       <Input
                         size="large"
                         placeholder={t("Hujjat raqami")} />
                     </Form.Item>
-                    <span className="custom-input-label-1">{t("Hujjat raqami")}</span>
-                  </Form.Item>
+                    {/* <span className="custom-input-label-1"></span> */}
+                  {/* </Form.Item> */}
                 </Col>
-                <Col span={4}>
-                  <Form.Item>
+                <Col span={5}>
+                  {/* <Form.Item> */}
                     <Form.Item
                       key="dyna-form-facutura-no-old-1"
+                          label={t("Hujjat turi")}
                       name="AllDocumentsSearch[status]">
                       <Select
                         size="large"
-                        placeholder={t("Holati")} 
-                        bordered={false}
+                        placeholder={t("Hujjat turi")} 
+                        //bordered={false}
                         allowClear
                         options={[
-                          { label: t("Saqlangan"), value: 1},
-                          { label: t("Imzo kutilmoqda"), value: 2 },
-                          { label: t("Jo'natilgan"), value: 3 },
-                          { label: t("Bekor qilingan"), value: 4 },
-                          { label: t("Qaytarib yuborilgan"), value: 5 },
-                          { label: t("Qabul qilingan"), value: 6 },
-                          { label: t("Muvaffaqiyatli"), value: 7 },
+                          { label: t("Faktura"), value: 1},
+                          { label: t("Akt"), value: 2 },
+                          { label: t("Shartnoma"), value: 3 },
+                          { label: t("Ishonchnoma"), value: 4 },
+                          { label: t("TTY"), value: 5 },
                         ]}
                         />
                         
                     </Form.Item>
-                    <span className="custom-input-label-1">{t("Holati")}</span>
-                  </Form.Item>
+                    {/* <span className="custom-input-label-1"></span> */}
+                  {/* </Form.Item> */}
                 </Col>
-                <Col span={4}>
-                  <Form.Item>
+                <Col span={5}>
+                  {/* <Form.Item> */}
                     <Form.Item
+                        label={t("Kontragent")}
                       key="dyna-form-facutura-no-old-4"
                       name="AllDocumentsSearch[contragent_name]">
                       <Input
@@ -501,41 +560,51 @@ const DynaGrid = ({
                         size="large"
                         placeholder={t("Kontragent")} />
                     </Form.Item>
-                    <span className="custom-input-label-1">{t("Kontragent")}</span>
-                  </Form.Item>
+                    {/* <span className="custom-input-label-1"></span> */}
+                  {/* </Form.Item> */}
                 </Col>
-                <Col span={3}>
-                  <Form.Item>
+                <Col span={4}>
+                  {/* <Form.Item> */}
                     <Form.Item
-                      key="dyna-form-facutura-no-old-5"
-                      name="begin_date">
+                        key="dyna-form-facutura-no-old-5"
+                        label={t("Dan")}
+                        name="begin_date">
                       <DatePicker
-                        rules={[{ required: true }]}
-                        size="large"
-                        placeholder={t("Dan")} />
+                          id={'begin_date'}
+                          onChange={e=>handlePicker(e,'begin_date')}
+                          disabledDate={disabledDateStarted}
+                          // maxDate={date['end_date']}
+                          rules={[{ required: true }]}
+                          size="large"
+                          placeholder={t("Dan")} />
                     </Form.Item>
-                    <span className="custom-input-label-1">{t("Dan")}</span>
-                  </Form.Item>
+                    {/* <span className="custom-input-label-1"></span> */}
+                  {/* </Form.Item> */}
                 </Col>
-                <Col span={3}>
-                  <Form.Item>
+                <Col span={4}>
+                  {/* <Form.Item> */}
                     <Form.Item
                       key="dyna-form-facutura-no-old-6"
+                        label={t("Gacha")}
                       name="end_date">
                       <DatePicker
-                        rules={[{ required: true }]}
+                          id={'end_date'}
+                          // minDate={date['begin_date']}
+                          disabledDate={disabledDateEnded}
+                          onChange={e=>handlePicker(e,'end_date')}
+                          rules={[{ required: true }]}
                         size="large"
                         placeholder={t("Gacha")} />
                     </Form.Item>
-                    <span className="custom-input-label-1">{t("Gacha")}</span>
-                  </Form.Item>
+                    {/* <span className="custom-input-label-1"></span> */}
+                  {/* </Form.Item> */}
                 </Col>
                 <Col span={2}>
                   <Form.Item>
                     <Button
                       htmlType="submit"
                       size="large"
-                      style={{ backgroundColor: '#2B63C0', color: '#fff' }}
+                      style={{ backgroundColor: '#2B63C0', color: '#fff', width: '100%' }}
                     >
                       {t("Filter")}
                     </Button>
@@ -544,23 +613,30 @@ const DynaGrid = ({
               </Row>
             </Form>
           </div>
+          }
         </div>
-
-
-      <div 
-        style={{marginBottom: 10, display: "flex", justifyContent: "space-between"}}>
-        <Button 
-          onClick={()=>{toggleFullView(!isFulliew)}} 
-          type="primary" 
-          icon={isFulliew ? <FullscreenExitOutlined /> : <FullscreenOutlined />}>
-            { isFulliew ? "Kichraytirish" : "Kengaytirish" }
-          </Button>
-        <div>
-          <h3>{title}</h3>
-        </div>
-      </div>
 
       
+      {
+        Array.isArray(tableAttachedTabs)&&tableAttachedTabs?.length>0?
+            <div style={{
+              marginTop: 24,
+              //height: 33,
+              display: 'flex'
+              //backgroundColor: 'rgba(255, 255, 255, 0.5)',
+            }}
+              
+            >
+              {tableAttachedTabs.map((item, index) =>{
+                return <div 
+                  onClick={()=>handleAttachedTabClick(index,item.url)}
+                  className={`table-attached-tab ${index===0?' first-item ':''} ${index===tableAttachedTabs.length-1?' last-item ':''} ${activTabIndex===index? 'att-active':''}`}>
+                    <Badge color={item.color} />  {item.title}
+                </div>
+              })}
+            </div>
+            :null
+      }
       <Table
         rowSelection={{
           selectedRowKeys,
@@ -572,14 +648,35 @@ const DynaGrid = ({
         columns={columns} 
           dataSource={ajaxDataSource} 
         scroll={{ x: allColumns.length * 120, }}//y: window.innerHeight - window.innerHeight / 13 }} 
-        pagination={{position: ['bottomCenter'], ...pagination,total: totalDataCount}}
+        pagination={{
+          locale: {items_per_page: ' ta'},
+          position: ['bottomRight'], 
+          itemRender: PaginationRenderer,
+          ...pagination,
+          total: 1000, }}
       />
+      <div style={{display: 'flex'}}>
+          {
+            Array.isArray(tableAttachedTabs) && activTabIndex===0 ?
+            <SignBtn
+              onClick={() => console.log(selectedRowKeys)}
+            />
+            :null
+          }
+          {
+            Array.isArray(tableAttachedTabs) && activTabIndex === 0  ?
+              <CancelBtn />
+              :null
+          }
+          
+      </div>
     </div>);
   }
 
 
 const mapStateToProps = createStructuredSelector({
   currentUser: selectCurrentUser,
+  user:selectCurrentUser
 })
 
 const dispatchMapStateToPros = (dispatch)=>({

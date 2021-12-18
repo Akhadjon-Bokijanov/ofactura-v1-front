@@ -24,6 +24,7 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
     const [isKeyLoading, setKeyIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
     const [notFound, setNotFound] = useState(false);
+    const [keyNotFound,setKeyNotFound] = useState(false);
 
 
     useEffect(() => {
@@ -33,6 +34,7 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
             return itemId;
         }, function (itemId, v) {
             eKeys.push({ value: itemId, text: v })
+            setKeyNotFound(false)
             setEKeys([...eKeys])
             //return uiCreateItem(itemId, v);
         }, function (items, firstId) {
@@ -44,6 +46,14 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
             message.error(t("E-Imzo xatosi. Sizda E-Imzo programmasi yoki E-Imzo browseri mavjud emas!"))
         });
     }, [])
+
+    useEffect(()=>{
+        if(eKeys.length==0){
+            setKeyNotFound(true)
+        }else {
+            setKeyNotFound(false)
+        }
+    },[eKeys])
 
     const validateMessages = {
         required: 'Bu maydon majburiy!',
@@ -119,7 +129,8 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
     return (
         <div className={st.login_main_container} style={{
             marginTop:"70px",
-            marginRight:"100px"}}>
+            marginRight:"100px"
+        }}>
             <Row justify="space-around">
                 {
                     !notFound&&
@@ -128,7 +139,9 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
                         activeTab === 0 ?
                             <div>
                                 <div>
-                                    <h2>Welcome</h2>
+                                    {
+                                        keyNotFound ? null : <div style={{fontSize: 32, fontWeight: 700}}>{t("Welcome")}</div>
+                                    }
                                     <Form
                                         name="e-key"
                                         onFinish={handleKeySubmit}
@@ -136,8 +149,7 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
                                         validateMessages={validateMessages}
                                     >
                                     <div style={{maxHeight:"380px",overflowY:'auto'}}>
-
-                                            <div>
+                                            <div >
                                                 <Form.Item
                                                     className={st.login_form_container}
                                                     name="key">
@@ -146,10 +158,10 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
                                                         {
                                                             eKeys.map(data => <Radio key={data.value} value={data}>
                                                                 <div className={`${st.client_availbale_key}`}>
-                                                                    <div>{t("FIO")}: {data.text.CN} </div>
-                                                                    <div>{t("STIR")}: {data.text.TIN}</div>
-                                                                    <div>{t("Tashkilot")}: {data.text.O}</div>
-                                                                    <div>{t("Amal qilish muddati")}:
+                                                                    <div><strong style={{marginRight: 4}}>{t("FIO")}:</strong>{data.text.CN}</div>
+                                                                    <div><strong style={{ marginRight: 4 }}>{t("STIR")}: </strong>{data.text.TIN}</div>
+                                                                    <div><strong style={{ marginRight: 4 }}>{t("Tashkilot")}: </strong>{data.text.O}</div>
+                                                                    <div><strong style={{ marginRight: 4 }}>{t("Amal qilish muddati")}:</strong>
                                                                         {moment(data.text.validTo).format("MMMM Do YYYY, H:mm:ss")}
                                                                     </div>
                                                                 </div>
@@ -158,11 +170,13 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
                                                     </Radio.Group>
                                                 </Form.Item>
                                             </div>
-
-
-
+                                        {
+                                            keyNotFound&&
+                                                    <div style={{ fontWeight: 700, fontSize: 32, color: '#303030', marginBottom: 32, height: 32}}>Сертификаты не найдены</div>
+                                        }
                                     </div>
-                                        <Form.Item>
+                                        <div>
+                                        <Form.Item style={{marginTop: 14}}>
                                             <Button
                                                 loading={isKeyLoading}
                                                 style={{display: 'block', width: '55%'}}
@@ -173,6 +187,7 @@ const Login = ({ setCurrentUser, history, setEspUser, setKeyId }) => {
                                                 {t("Kirish")}
                                             </Button>
                                         </Form.Item>
+                                        </div>
                                     </Form>
                                 </div>
 
