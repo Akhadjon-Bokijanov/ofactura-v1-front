@@ -83,37 +83,7 @@ const App = ({ user, token, loadedKey, signOut })=> {
 
     return (
         <div className="App">
-        <Form onFinish={handleFinish}>
-        <Row gutter={8}>
-        <Col span={6}>
-        <Form.Item name="t">
-        <Input placeholder="Terminal ID" />
-        </Form.Item>
-        </Col>
-        <Col span={6}>
-        <Form.Item name="r">
-        <Input placeholder="Payment No" />
-        </Form.Item>
-        </Col>
-        <Col span={6}>
-        <Form.Item name="c">
-        <Input placeholder="Payment Date" />
-        </Form.Item>
-        </Col>
-        <Col span={6}>
-        <Form.Item name="s">
-        <Input placeholder="Fiscal Sign" />
-        </Form.Item>
-        </Col>
-        </Row>
-        </Form>
-<Row justify="space-between">
-    <Col span={8}>
-    <QRCode
-                            value={`https://ofd.soliq.uz/check?t=${t}&r=${r}&c=${c}&s=${s}`}
-                        />
-    </Col>
-            </Row>
+        
         </div>
     )
 }
